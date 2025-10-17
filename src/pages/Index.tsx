@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Plus, RotateCcw, TrendingUp, Wallet } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, RotateCcw, TrendingUp, Wallet, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -23,6 +24,7 @@ interface Entry {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [showSplash, setShowSplash] = useState(true);
@@ -149,7 +151,10 @@ const Index = () => {
             </div>
           </Card>
 
-          <Card className="bg-card border-gold/30 p-6 transition-smooth hover:shadow-gold">
+          <Card 
+            className="bg-card border-gold/30 p-6 transition-smooth hover:shadow-gold cursor-pointer"
+            onClick={() => navigate("/vault")}
+          >
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -159,8 +164,11 @@ const Index = () => {
                   {formatCurrency(toSave)}
                 </p>
               </div>
-              <TrendingUp className="w-5 h-5 text-gold" />
+              <Lock className="w-5 h-5 text-gold" />
             </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Clique para ver o cofre
+            </p>
           </Card>
 
           <Card className="bg-card border-border p-6 transition-smooth hover:shadow-gold">
