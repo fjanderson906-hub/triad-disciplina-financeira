@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, RotateCcw, TrendingUp, Wallet, Lock } from "lucide-react";
+import { Plus, RotateCcw, TrendingUp, Wallet, Lock, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -136,7 +136,7 @@ const Index = () => {
         </header>
 
         {/* Summary Cards */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-card border-border p-6 transition-smooth hover:shadow-gold">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
@@ -183,6 +183,26 @@ const Index = () => {
               </div>
               <div className="w-5 h-5 rounded-full border-2 border-foreground" />
             </div>
+          </Card>
+
+          <Card 
+            className="bg-card border-border p-6 transition-smooth hover:shadow-gold cursor-pointer group"
+            onClick={() => navigate("/meta")}
+          >
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground group-hover:text-gold transition-colors">
+                  Meta
+                </p>
+                <p className="text-2xl font-semibold text-foreground group-hover:text-gold transition-colors">
+                  Definir
+                </p>
+              </div>
+              <Target className="w-5 h-5 text-muted-foreground group-hover:text-gold transition-colors" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Planeje seu objetivo
+            </p>
           </Card>
         </section>
 
