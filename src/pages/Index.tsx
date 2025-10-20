@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, RotateCcw, TrendingUp, Wallet, Lock, Target } from "lucide-react";
+import { Plus, RotateCcw, TrendingUp, Wallet, Lock, Target, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -202,6 +202,26 @@ const Index = () => {
             </div>
             <p className="text-xs text-muted-foreground mt-3">
               Planeje seu objetivo
+            </p>
+          </Card>
+
+          <Card 
+            className="bg-card border-gold/30 p-6 transition-smooth hover:shadow-gold cursor-pointer group"
+            onClick={() => navigate("/journey")}
+          >
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground group-hover:text-gold transition-colors">
+                  Minha Jornada
+                </p>
+                <p className="text-2xl font-semibold text-gold">
+                  Patrimônio
+                </p>
+              </div>
+              <LineChart className="w-5 h-5 text-gold" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Painel de investimentos
             </p>
           </Card>
         </section>
