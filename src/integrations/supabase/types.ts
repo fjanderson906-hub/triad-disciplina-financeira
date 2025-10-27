@@ -196,16 +196,73 @@ export type Database = {
           },
         ]
       }
+      user_plans: {
+        Row: {
+          created_at: string
+          id: string
+          next_billing_date: string | null
+          plan_name: Database["public"]["Enums"]["plan_type"]
+          plan_price: number
+          start_date: string
+          status: Database["public"]["Enums"]["plan_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          next_billing_date?: string | null
+          plan_name?: Database["public"]["Enums"]["plan_type"]
+          plan_price?: number
+          start_date?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          next_billing_date?: string | null
+          plan_name?: Database["public"]["Enums"]["plan_type"]
+          plan_price?: number
+          start_date?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_plan_features: {
+        Args: { p_user_id: string }
+        Returns: {
+          can_use_basic_ai: boolean
+          can_use_full_ai: boolean
+          can_use_goals: boolean
+          can_use_limited_ai: boolean
+          can_use_realtime_ai: boolean
+        }[]
+      }
+      should_show_upgrade_prompt: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       asset_type: "FII" | "Ação" | "Cripto" | "Outros"
       goal_status: "in_progress" | "achieved" | "delayed"
+      plan_status: "ativo" | "inativo" | "cancelado"
+      plan_type: "BASICO" | "OURO" | "DIAMANTE" | "SAFIRA"
       transaction_type: "income" | "expense"
     }
     CompositeTypes: {
@@ -336,6 +393,8 @@ export const Constants = {
     Enums: {
       asset_type: ["FII", "Ação", "Cripto", "Outros"],
       goal_status: ["in_progress", "achieved", "delayed"],
+      plan_status: ["ativo", "inativo", "cancelado"],
+      plan_type: ["BASICO", "OURO", "DIAMANTE", "SAFIRA"],
       transaction_type: ["income", "expense"],
     },
   },
