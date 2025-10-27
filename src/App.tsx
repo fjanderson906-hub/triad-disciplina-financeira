@@ -7,7 +7,9 @@ import Index from "./pages/Index";
 import Vault from "./pages/Vault";
 import Meta from "./pages/Meta";
 import Journey from "./pages/Journey";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -18,10 +20,39 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/vault" element={<Vault />} />
-          <Route path="/meta" element={<Meta />} />
-          <Route path="/journey" element={<Journey />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vault"
+            element={
+              <ProtectedRoute>
+                <Vault />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meta"
+            element={
+              <ProtectedRoute>
+                <Meta />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/journey"
+            element={
+              <ProtectedRoute>
+                <Journey />
+              </ProtectedRoute>
+            }
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

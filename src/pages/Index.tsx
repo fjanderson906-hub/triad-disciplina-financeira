@@ -4,6 +4,7 @@ import { Plus, RotateCcw, TrendingUp, Wallet, Lock, Target, LineChart } from "lu
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import Header from "@/components/Header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -123,17 +124,10 @@ const Index = () => {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-charcoal p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <header className="text-center space-y-3 py-8">
-          <h1 className="font-display text-5xl md:text-6xl font-bold tracking-wider text-gold">
-            TRIAD
-          </h1>
-          <p className="font-body text-sm md:text-base text-muted-foreground tracking-wide">
-            Controle. Ordem. Liberdade.
-          </p>
-        </header>
+    <div className="min-h-screen bg-gradient-to-b from-background to-charcoal">
+      <Header />
+      <main className="p-4 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
 
         {/* Summary Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -339,8 +333,9 @@ const Index = () => {
             </div>
           </Card>
         )}
-      </div>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 };
 
