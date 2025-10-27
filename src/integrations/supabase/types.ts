@@ -14,7 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accounts: {
+        Row: {
+          balance: number | null
+          id: string
+          investment: number | null
+          last_update: string | null
+          personal_use: number | null
+          reserve: number | null
+          total_expense: number | null
+          total_income: number | null
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          id?: string
+          investment?: number | null
+          last_update?: string | null
+          personal_use?: number | null
+          reserve?: number | null
+          total_expense?: number | null
+          total_income?: number | null
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          id?: string
+          investment?: number | null
+          last_update?: string | null
+          personal_use?: number | null
+          reserve?: number | null
+          total_expense?: number | null
+          total_income?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          asset_name: string
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          id: string
+          updated_at: string | null
+          user_id: string
+          value: number
+        }
+        Insert: {
+          asset_name: string
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          id?: string
+          updated_at?: string | null
+          user_id: string
+          value: number
+        }
+        Update: {
+          asset_name?: string
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          created_at: string | null
+          current_value: number | null
+          deadline: string | null
+          goal_name: string
+          id: string
+          status: Database["public"]["Enums"]["goal_status"] | null
+          target_value: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number | null
+          deadline?: string | null
+          goal_name: string
+          id?: string
+          status?: Database["public"]["Enums"]["goal_status"] | null
+          target_value: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number | null
+          deadline?: string | null
+          goal_name?: string
+          id?: string
+          status?: Database["public"]["Enums"]["goal_status"] | null
+          target_value?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          date: string | null
+          description: string | null
+          id: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +204,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      asset_type: "FII" | "Ação" | "Cripto" | "Outros"
+      goal_status: "in_progress" | "achieved" | "delayed"
+      transaction_type: "income" | "expense"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +333,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      asset_type: ["FII", "Ação", "Cripto", "Outros"],
+      goal_status: ["in_progress", "achieved", "delayed"],
+      transaction_type: ["income", "expense"],
+    },
   },
 } as const
