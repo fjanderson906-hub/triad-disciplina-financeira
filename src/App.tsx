@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Vault from "./pages/Vault";
 import Meta from "./pages/Meta";
 import Journey from "./pages/Journey";
+import Simulator from "./pages/Simulator";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -50,6 +51,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Journey />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/simulator"
+            element={
+              <ProtectedRoute>
+                <Simulator />
               </ProtectedRoute>
             }
           />
