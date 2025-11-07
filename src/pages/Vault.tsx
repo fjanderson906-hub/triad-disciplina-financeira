@@ -15,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
+import { SubliminalMessage } from "@/components/SubliminalMessage";
 
 interface Entry {
   id: string;
@@ -91,7 +92,8 @@ const Vault = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-charcoal p-4 md:p-8">
+    <main className="min-h-screen bg-gradient-to-b from-background to-charcoal p-4 md:p-8 relative">
+      <SubliminalMessage position="bottom" />
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <header className="space-y-6 py-8">

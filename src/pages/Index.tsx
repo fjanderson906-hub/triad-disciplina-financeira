@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SubliminalMessage } from "@/components/SubliminalMessage";
 
 interface Entry {
   id: string;
@@ -171,7 +172,8 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-charcoal">
+    <div className="min-h-screen bg-gradient-to-b from-background to-charcoal relative">
+      <SubliminalMessage position="top" />
       <Header />
       <main className="p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-8">

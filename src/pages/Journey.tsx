@@ -15,6 +15,7 @@ import {
 import { ArrowLeft, Plus, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { useToast } from "@/hooks/use-toast";
+import { SubliminalMessage } from "@/components/SubliminalMessage";
 
 interface FII {
   id: string;
@@ -222,7 +223,8 @@ const Journey = () => {
   const analysis = getAnalysis();
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8 relative">
+      <SubliminalMessage position="bottom" />
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
