@@ -4,6 +4,7 @@ import { Plus, RotateCcw, TrendingUp, Wallet, Lock, Target, LineChart } from "lu
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import Header from "@/components/Header";
 import {
   AlertDialog,
@@ -17,6 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Entry {
   id: string;
@@ -29,9 +31,32 @@ const Index = () => {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [showSplash, setShowSplash] = useState(true);
+  const [savingRatio, setSavingRatio] = useState<number>(3);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Load entries from localStorage on mount
+  // Load user profile and entries from localStorage on mount
   useEffect(() => {
+    const loadUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        setUserId(user.id);
+        
+        // Load saving ratio from profile
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("saving_ratio")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile?.saving_ratio) {
+          setSavingRatio(profile.saving_ratio);
+        }
+      }
+    };
+
+    loadUserData();
+
     const savedEntries = localStorage.getItem("triad-entries");
     if (savedEntries) {
       setEntries(JSON.parse(savedEntries));
@@ -53,8 +78,30 @@ const Index = () => {
   }, [entries]);
 
   const totalReceived = entries.reduce((sum, entry) => sum + entry.amount, 0);
-  const toSave = totalReceived / 3;
+  const toSave = totalReceived / savingRatio;
   const available = totalReceived - toSave;
+
+  const handleRatioChange = async (value: string) => {
+    const newRatio = parseInt(value);
+    setSavingRatio(newRatio);
+    
+    // Save to profile if user is authenticated
+    if (userId) {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ saving_ratio: newRatio })
+        .eq("id", userId);
+      
+      if (error) {
+        console.error("Error updating saving ratio:", error);
+        toast({
+          title: "Erro ao salvar",
+          description: "Não foi possível salvar sua preferência.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   const handleAddEntry = () => {
     const amount = parseFloat(inputValue.replace(",", "."));
@@ -150,10 +197,31 @@ const Index = () => {
             onClick={() => navigate("/vault")}
           >
             <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Guardar (1/3)
-                </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Guardar
+                  </p>
+                  <ToggleGroup 
+                    type="single" 
+                    value={savingRatio.toString()} 
+                    onValueChange={handleRatioChange}
+                    className="h-6"
+                  >
+                    <ToggleGroupItem 
+                      value="3" 
+                      className="h-6 px-2 text-xs data-[state=on]:bg-gold data-[state=on]:text-primary-foreground border-gold/30 transition-smooth"
+                    >
+                      1/3
+                    </ToggleGroupItem>
+                    <ToggleGroupItem 
+                      value="10" 
+                      className="h-6 px-2 text-xs data-[state=on]:bg-gold data-[state=on]:text-primary-foreground border-gold/30 transition-smooth"
+                    >
+                      1/10
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
                 <p className="text-2xl font-semibold text-gold">
                   {formatCurrency(toSave)}
                 </p>
@@ -169,7 +237,7 @@ const Index = () => {
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Disponível (2/3)
+                  Disponível ({savingRatio === 3 ? '2/3' : '9/10'})
                 </p>
                 <p className="text-2xl font-semibold text-foreground">
                   {formatCurrency(available)}
@@ -316,18 +384,18 @@ const Index = () => {
             <div className="h-12 flex rounded-lg overflow-hidden border border-border">
               <div
                 className="bg-gold transition-all duration-700 ease-out flex items-center justify-center"
-                style={{ width: "33.33%" }}
+                style={{ width: `${(1 / savingRatio) * 100}%` }}
               >
                 <span className="text-xs font-semibold text-primary-foreground">
-                  1/3
+                  1/{savingRatio}
                 </span>
               </div>
               <div
                 className="bg-muted transition-all duration-700 ease-out flex items-center justify-center"
-                style={{ width: "66.67%" }}
+                style={{ width: `${((savingRatio - 1) / savingRatio) * 100}%` }}
               >
                 <span className="text-xs font-semibold text-foreground">
-                  2/3
+                  {savingRatio === 3 ? '2/3' : '9/10'}
                 </span>
               </div>
             </div>
