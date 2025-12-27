@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Entry {
   id: string;
@@ -25,8 +26,28 @@ const Meta = () => {
   const [goal, setGoal] = useState<Goal>({ name: "", targetAmount: 0 });
   const [goalName, setGoalName] = useState("");
   const [goalAmount, setGoalAmount] = useState("");
+  const [savingRatio, setSavingRatio] = useState<number>(3);
 
   useEffect(() => {
+    const loadData = async () => {
+      // Load saving ratio from user profile
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("saving_ratio")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile?.saving_ratio) {
+          setSavingRatio(profile.saving_ratio);
+        }
+      }
+    };
+
+    loadData();
+
     const savedEntries = localStorage.getItem("triad-entries");
     if (savedEntries) {
       setEntries(JSON.parse(savedEntries));
@@ -42,7 +63,7 @@ const Meta = () => {
   }, []);
 
   const totalReceived = entries.reduce((sum, entry) => sum + entry.amount, 0);
-  const totalSaved = totalReceived / 3;
+  const totalSaved = totalReceived / savingRatio;
 
   const progress = goal.targetAmount > 0 ? Math.min((totalSaved / goal.targetAmount) * 100, 100) : 0;
   const remaining = Math.max(goal.targetAmount - totalSaved, 0);
@@ -54,8 +75,8 @@ const Meta = () => {
       return null;
     }
 
-    // Get saved amounts (1/3 of each entry)
-    const savedAmounts = entries.map(e => e.amount / 3);
+    // Get saved amounts based on current ratio
+    const savedAmounts = entries.map(e => e.amount / savingRatio);
 
     // Count frequency of each amount
     const frequencyMap: Record<number, number> = {};
