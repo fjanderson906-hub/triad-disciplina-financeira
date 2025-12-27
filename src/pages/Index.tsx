@@ -209,6 +209,7 @@ const Index = () => {
                     value={savingRatio.toString()} 
                     onValueChange={handleRatioChange}
                     className="h-6"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <ToggleGroupItem 
                       value="3" 
