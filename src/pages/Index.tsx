@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, RotateCcw, TrendingUp, Wallet, Lock, Target, LineChart } from "lucide-react";
+import { Plus, RotateCcw, Wallet, Lock, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -20,6 +20,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SubliminalMessage } from "@/components/SubliminalMessage";
+import { RitmoCard } from "@/components/RitmoCard";
+import { ProjecaoCard } from "@/components/ProjecaoCard";
+import { DecisaoDialog } from "@/components/DecisaoDialog";
 
 interface Entry {
   id: string;
@@ -34,6 +37,7 @@ const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [savingRatio, setSavingRatio] = useState<number>(3);
   const [userId, setUserId] = useState<string | null>(null);
+  const [showDecisaoDialog, setShowDecisaoDialog] = useState(false);
 
   // Load user profile and entries from localStorage on mount
   useEffect(() => {
@@ -196,7 +200,7 @@ const Index = () => {
 
           <Card 
             className="bg-card border-gold/30 p-6 transition-smooth hover:shadow-gold cursor-pointer"
-            onClick={() => navigate("/vault")}
+            onClick={() => setShowDecisaoDialog(true)}
           >
             <div className="flex items-start justify-between">
               <div className="space-y-3">
@@ -236,6 +240,12 @@ const Index = () => {
             </p>
           </Card>
 
+          {/* Ritmo Card */}
+          <RitmoCard entries={entries} savingRatio={savingRatio} />
+
+          {/* Projecao Card */}
+          <ProjecaoCard entries={entries} savingRatio={savingRatio} />
+
           <Card className="bg-card border-border p-6 transition-smooth hover:shadow-gold">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
@@ -248,26 +258,6 @@ const Index = () => {
               </div>
               <div className="w-5 h-5 rounded-full border-2 border-foreground" />
             </div>
-          </Card>
-
-          <Card 
-            className="bg-card border-border p-6 transition-smooth hover:shadow-gold cursor-pointer group"
-            onClick={() => navigate("/meta")}
-          >
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground group-hover:text-gold transition-colors">
-                  Meta
-                </p>
-                <p className="text-2xl font-semibold text-foreground group-hover:text-gold transition-colors">
-                  Definir
-                </p>
-              </div>
-              <Target className="w-5 h-5 text-muted-foreground group-hover:text-gold transition-colors" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              Planeje seu objetivo
-            </p>
           </Card>
 
           <Card 
@@ -402,10 +392,20 @@ const Index = () => {
                 </span>
               </div>
             </div>
-          </Card>
+           </Card>
         )}
         </div>
       </main>
+
+      {/* Decisao Dialog */}
+      <DecisaoDialog 
+        open={showDecisaoDialog} 
+        onOpenChange={setShowDecisaoDialog}
+        onConfirm={() => {
+          setShowDecisaoDialog(false);
+          navigate("/vault");
+        }}
+      />
     </div>
   );
 };
