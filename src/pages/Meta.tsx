@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Target, TrendingUp, Award } from "lucide-react";
+import { ArrowLeft, Target, TrendingUp, Award, Clock, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,67 @@ const Meta = () => {
   const progress = goal.targetAmount > 0 ? Math.min((totalSaved / goal.targetAmount) * 100, 100) : 0;
   const remaining = Math.max(goal.targetAmount - totalSaved, 0);
   const goalAchieved = totalSaved >= goal.targetAmount && goal.targetAmount > 0;
+
+  // Calculate estimated time based on saving pattern
+  const calculateEstimatedTime = () => {
+    if (entries.length < 3 || remaining <= 0) {
+      return null;
+    }
+
+    // Get saved amounts (1/3 of each entry)
+    const savedAmounts = entries.map(e => e.amount / 3);
+
+    // Count frequency of each amount
+    const frequencyMap: Record<number, number> = {};
+    savedAmounts.forEach(amount => {
+      const roundedAmount = Math.round(amount * 100) / 100;
+      frequencyMap[roundedAmount] = (frequencyMap[roundedAmount] || 0) + 1;
+    });
+
+    // Find the most frequent amount that appears 3+ times
+    let referenceAmount = 0;
+    let maxFrequency = 0;
+
+    Object.entries(frequencyMap).forEach(([amount, frequency]) => {
+      if (frequency >= 3 && frequency > maxFrequency) {
+        referenceAmount = parseFloat(amount);
+        maxFrequency = frequency;
+      }
+    });
+
+    // If no pattern found with 3+ occurrences, use average
+    if (referenceAmount === 0) {
+      // Check if we have at least 3 entries to calculate average
+      if (entries.length < 3) return null;
+      referenceAmount = savedAmounts.reduce((a, b) => a + b, 0) / savedAmounts.length;
+    }
+
+    if (referenceAmount <= 0) return null;
+
+    // Calculate months needed
+    const monthsNeeded = Math.ceil(remaining / referenceAmount);
+
+    // Format time estimation
+    if (monthsNeeded < 1) {
+      return "menos de 1 mês";
+    } else if (monthsNeeded === 1) {
+      return "1 mês";
+    } else if (monthsNeeded < 12) {
+      return `${monthsNeeded} meses`;
+    } else {
+      const years = Math.floor(monthsNeeded / 12);
+      const months = monthsNeeded % 12;
+      if (months === 0) {
+        return years === 1 ? "1 ano" : `${years} anos`;
+      }
+      return years === 1 
+        ? `1 ano e ${months} ${months === 1 ? 'mês' : 'meses'}`
+        : `${years} anos e ${months} ${months === 1 ? 'mês' : 'meses'}`;
+    }
+  };
+
+  const estimatedTime = calculateEstimatedTime();
+  const hasEnoughData = entries.length >= 3;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -242,6 +303,58 @@ const Meta = () => {
                         {formatCurrency(remaining)}
                       </p>
                     </div>
+                  </div>
+                </div>
+
+                {/* Time Estimation Section */}
+                <div className="border-t border-border pt-6 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-gold" />
+                    <span className="text-sm font-medium text-foreground">Projeção de Tempo</span>
+                  </div>
+
+                  {estimatedTime ? (
+                    <div className="bg-secondary/50 rounded-lg p-4 space-y-3">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Mantendo esse ritmo, sua meta pode ser alcançada em aproximadamente:
+                      </p>
+                      <p className="text-2xl font-bold text-gold text-center py-2">
+                        {estimatedTime}
+                      </p>
+                      <p className="text-xs text-muted-foreground italic text-center">
+                        A projeção reflete constância, não promessa.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-secondary/30 rounded-lg p-4 space-y-3 opacity-70">
+                      <p className="text-sm text-muted-foreground text-center">
+                        {!hasEnoughData 
+                          ? "Registre pelo menos 3 entradas para obter uma estimativa."
+                          : "Não foi possível calcular uma estimativa com os dados atuais."}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Observations */}
+                  <div className="pt-4 space-y-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Lock className="w-4 h-4" />
+                      <span className="text-xs uppercase tracking-wider">Observações</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-muted-foreground">
+                      <li className="flex items-start gap-2">
+                        <span className="text-gold mt-0.5">•</span>
+                        <span>O cálculo considera apenas valores realmente guardados.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-gold mt-0.5">•</span>
+                        <span>Se não houver padrão suficiente, a estimativa não será exibida.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-gold mt-0.5">•</span>
+                        <span>Registre entradas com consistência para obter projeções mais precisas.</span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </Card>
