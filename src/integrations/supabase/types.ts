@@ -93,6 +93,30 @@ export type Database = {
           },
         ]
       }
+      entries: {
+        Row: {
+          created_at: string
+          id: string
+          tipo: Database["public"]["Enums"]["entry_type"]
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tipo: Database["public"]["Enums"]["entry_type"]
+          user_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tipo?: Database["public"]["Enums"]["entry_type"]
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string | null
@@ -139,6 +163,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          is_pro: boolean | null
           name: string | null
           saving_ratio: number | null
           updated_at: string | null
@@ -147,6 +172,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id: string
+          is_pro?: boolean | null
           name?: string | null
           saving_ratio?: number | null
           updated_at?: string | null
@@ -155,6 +181,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          is_pro?: boolean | null
           name?: string | null
           saving_ratio?: number | null
           updated_at?: string | null
@@ -243,7 +270,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      base_projecao: {
+        Row: {
+          goal_id: string | null
+          goal_name: string | null
+          meses_estimados: number | null
+          meta_valor: number | null
+          ocorrencias: number | null
+          user_id: string | null
+          valor_atual: number | null
+          valor_recorrente: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      valores_recorrentes: {
+        Row: {
+          ocorrencias: number | null
+          user_id: string | null
+          valor: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_plan_features: {
@@ -256,6 +311,7 @@ export type Database = {
           can_use_realtime_ai: boolean
         }[]
       }
+      is_user_pro: { Args: { p_user_id: string }; Returns: boolean }
       should_show_upgrade_prompt: {
         Args: { p_user_id: string }
         Returns: boolean
@@ -263,6 +319,7 @@ export type Database = {
     }
     Enums: {
       asset_type: "FII" | "Ação" | "Cripto" | "Outros"
+      entry_type: "guardar" | "disponivel"
       goal_status: "in_progress" | "achieved" | "delayed"
       plan_status: "ativo" | "inativo" | "cancelado"
       plan_type: "BASICO" | "OURO" | "DIAMANTE" | "SAFIRA"
@@ -395,6 +452,7 @@ export const Constants = {
   public: {
     Enums: {
       asset_type: ["FII", "Ação", "Cripto", "Outros"],
+      entry_type: ["guardar", "disponivel"],
       goal_status: ["in_progress", "achieved", "delayed"],
       plan_status: ["ativo", "inativo", "cancelado"],
       plan_type: ["BASICO", "OURO", "DIAMANTE", "SAFIRA"],
