@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Target, TrendingUp, Award, Clock, Lock } from "lucide-react";
+import { ArrowLeft, Target, TrendingUp, Award, Clock, Lock, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { usePlan } from "@/hooks/usePlan";
+import { PaywallDialog } from "@/components/PaywallDialog";
 
 interface Entry {
   id: string;
@@ -22,11 +24,14 @@ interface Goal {
 
 const Meta = () => {
   const navigate = useNavigate();
+  const { features, isPro } = usePlan();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [goal, setGoal] = useState<Goal>({ name: "", targetAmount: 0 });
   const [goalName, setGoalName] = useState("");
   const [goalAmount, setGoalAmount] = useState("");
   const [savingRatio, setSavingRatio] = useState<number>(3);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallTrigger, setPaywallTrigger] = useState<"projection" | "pattern" | "multiple_goals">("projection");
 
   useEffect(() => {
     const loadData = async () => {
@@ -129,6 +134,7 @@ const Meta = () => {
 
   const estimatedTime = calculateEstimatedTime();
   const hasEnoughData = entries.length >= 3;
+  const canViewProjection = features.canViewProjection;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -170,6 +176,13 @@ const Meta = () => {
       title: "Meta definida",
       description: `Meta "${goalName}" de ${formatCurrency(amount)} salva com sucesso.`,
     });
+  };
+
+  const handleProjectionClick = () => {
+    if (!canViewProjection && estimatedTime) {
+      setPaywallTrigger("projection");
+      setShowPaywall(true);
+    }
   };
 
   return (
@@ -332,57 +345,102 @@ const Meta = () => {
                   <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-gold" />
                     <span className="text-sm font-medium text-foreground">Projeção de Tempo</span>
+                    {!canViewProjection && (
+                      <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+                        <Crown className="w-3 h-3" />
+                        PRO
+                      </span>
+                    )}
                   </div>
 
-                  {estimatedTime ? (
-                    <div className="bg-secondary/50 rounded-lg p-4 space-y-3">
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        Mantendo esse ritmo, sua meta pode ser alcançada em aproximadamente:
-                      </p>
-                      <p className="text-2xl font-bold text-gold text-center py-2">
-                        {estimatedTime}
-                      </p>
-                      <p className="text-xs text-muted-foreground italic text-center">
-                        A projeção reflete constância, não promessa.
-                      </p>
-                    </div>
+                  {canViewProjection ? (
+                    // PRO users see full projection
+                    estimatedTime ? (
+                      <div className="bg-secondary/50 rounded-lg p-4 space-y-3">
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Mantendo esse ritmo, sua meta pode ser alcançada em aproximadamente:
+                        </p>
+                        <p className="text-2xl font-bold text-gold text-center py-2">
+                          {estimatedTime}
+                        </p>
+                        <p className="text-xs text-muted-foreground italic text-center">
+                          A projeção reflete constância, não promessa.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-secondary/30 rounded-lg p-4 space-y-3 opacity-70">
+                        <p className="text-sm text-muted-foreground text-center">
+                          {!hasEnoughData 
+                            ? "Registre pelo menos 3 entradas para obter uma estimativa."
+                            : "Não foi possível calcular uma estimativa com os dados atuais."}
+                        </p>
+                      </div>
+                    )
                   ) : (
-                    <div className="bg-secondary/30 rounded-lg p-4 space-y-3 opacity-70">
-                      <p className="text-sm text-muted-foreground text-center">
-                        {!hasEnoughData 
-                          ? "Registre pelo menos 3 entradas para obter uma estimativa."
-                          : "Não foi possível calcular uma estimativa com os dados atuais."}
-                      </p>
+                    // Free users see locked state
+                    <div 
+                      className="bg-secondary/30 rounded-lg p-4 space-y-3 cursor-pointer hover:bg-secondary/50 transition-smooth"
+                      onClick={handleProjectionClick}
+                    >
+                      <div className="flex flex-col items-center justify-center py-4 space-y-3">
+                        <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center">
+                          <Lock className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm text-muted-foreground text-center">
+                          {hasEnoughData 
+                            ? "Desbloqueie o TRIAD PRO para ver a projeção"
+                            : "Registre pelo menos 3 entradas para obter uma estimativa."}
+                        </p>
+                        {hasEnoughData && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-gold/30 text-gold hover:bg-gold/10"
+                            onClick={handleProjectionClick}
+                          >
+                            <Crown className="w-3 h-3 mr-1" />
+                            Ver projeção
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   )}
 
-                  {/* Observations */}
-                  <div className="pt-4 space-y-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Lock className="w-4 h-4" />
-                      <span className="text-xs uppercase tracking-wider">Observações</span>
+                  {/* Observations - Only visible for PRO or when there's useful info */}
+                  {canViewProjection && (
+                    <div className="pt-4 space-y-3">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Lock className="w-4 h-4" />
+                        <span className="text-xs uppercase tracking-wider">Observações</span>
+                      </div>
+                      <ul className="space-y-2 text-xs text-muted-foreground">
+                        <li className="flex items-start gap-2">
+                          <span className="text-gold mt-0.5">•</span>
+                          <span>O cálculo considera apenas valores realmente guardados.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-gold mt-0.5">•</span>
+                          <span>Se não houver padrão suficiente, a estimativa não será exibida.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-gold mt-0.5">•</span>
+                          <span>Registre entradas com consistência para obter projeções mais precisas.</span>
+                        </li>
+                      </ul>
                     </div>
-                    <ul className="space-y-2 text-xs text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <span className="text-gold mt-0.5">•</span>
-                        <span>O cálculo considera apenas valores realmente guardados.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-gold mt-0.5">•</span>
-                        <span>Se não houver padrão suficiente, a estimativa não será exibida.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-gold mt-0.5">•</span>
-                        <span>Registre entradas com consistência para obter projeções mais precisas.</span>
-                      </li>
-                    </ul>
-                  </div>
+                  )}
                 </div>
               </Card>
             )}
           </>
         )}
       </div>
+
+      <PaywallDialog 
+        open={showPaywall} 
+        onOpenChange={setShowPaywall}
+        trigger={paywallTrigger}
+      />
     </main>
   );
 };

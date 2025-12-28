@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { usePlan } from "@/hooks/usePlan";
+import { PaywallDialog } from "@/components/PaywallDialog";
 
 interface Entry {
   id: string;
@@ -14,7 +16,9 @@ interface RitmoCardProps {
 }
 
 export const RitmoCard = ({ entries, savingRatio }: RitmoCardProps) => {
+  const { features } = usePlan();
   const [streak, setStreak] = useState<{ days: number; weeks: number } | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     if (entries.length === 0) {
@@ -34,15 +38,21 @@ export const RitmoCard = ({ entries, savingRatio }: RitmoCardProps) => {
     const diffTime = Math.abs(today.getTime() - firstEntryDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    // For discipline tracking, we consider the streak as continuous if:
-    // - User has been consistently adding entries
-    // - We use the time from first entry to now as the "active period"
-    
     // Calculate weeks
     const weeks = Math.floor(diffDays / 7);
     
     setStreak({ days: diffDays, weeks });
   }, [entries, savingRatio]);
+
+  const canViewRitmo = features.canViewRitmo;
+  const hasData = streak && entries.length > 0;
+  const isLocked = !canViewRitmo && hasData;
+
+  const handleClick = () => {
+    if (isLocked) {
+      setShowPaywall(true);
+    }
+  };
 
   if (!streak || entries.length === 0) {
     return (
@@ -70,21 +80,41 @@ export const RitmoCard = ({ entries, savingRatio }: RitmoCardProps) => {
     : `${streak.days} ${streak.days === 1 ? 'dia' : 'dias'}`;
 
   return (
-    <Card className="bg-card border-border p-6 transition-smooth hover:shadow-gold">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">
-            Ritmo
-          </p>
-          <p className="text-2xl font-semibold text-foreground">
-            {displayText}
-          </p>
+    <>
+      <Card 
+        className={`bg-card border-border p-6 transition-smooth ${isLocked ? 'cursor-pointer' : ''} hover:shadow-gold`}
+        onClick={handleClick}
+      >
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              Ritmo
+            </p>
+            {isLocked ? (
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+                <p className="text-lg text-muted-foreground">
+                  PRO
+                </p>
+              </div>
+            ) : (
+              <p className="text-2xl font-semibold text-foreground">
+                {displayText}
+              </p>
+            )}
+          </div>
+          <Clock className={`w-5 h-5 ${isLocked ? 'text-muted-foreground' : 'text-gold'}`} />
         </div>
-        <Clock className="w-5 h-5 text-gold" />
-      </div>
-      <p className="text-xs text-muted-foreground mt-3">
-        Constância ativa
-      </p>
-    </Card>
+        <p className="text-xs text-muted-foreground mt-3">
+          {isLocked ? "Desbloqueie para ver" : "Constância ativa"}
+        </p>
+      </Card>
+
+      <PaywallDialog 
+        open={showPaywall} 
+        onOpenChange={setShowPaywall}
+        trigger="ritmo"
+      />
+    </>
   );
 };

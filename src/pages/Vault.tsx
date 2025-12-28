@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, RotateCcw, TrendingUp } from "lucide-react";
+import { ArrowLeft, Download, RotateCcw, TrendingUp, Lock, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -16,6 +16,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { SubliminalMessage } from "@/components/SubliminalMessage";
+import { usePlan } from "@/hooks/usePlan";
+import { PaywallDialog } from "@/components/PaywallDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Entry {
   id: string;
@@ -25,9 +28,31 @@ interface Entry {
 
 const Vault = () => {
   const navigate = useNavigate();
+  const { features, isPro } = usePlan();
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [savingRatio, setSavingRatio] = useState<number>(3);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
+    const loadData = async () => {
+      // Load saving ratio from user profile
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("saving_ratio")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile?.saving_ratio) {
+          setSavingRatio(profile.saving_ratio);
+        }
+      }
+    };
+
+    loadData();
+
     const savedEntries = localStorage.getItem("triad-entries");
     if (savedEntries) {
       setEntries(JSON.parse(savedEntries));
@@ -35,7 +60,7 @@ const Vault = () => {
   }, []);
 
   const totalReceived = entries.reduce((sum, entry) => sum + entry.amount, 0);
-  const totalSaved = totalReceived / 3;
+  const totalSaved = totalReceived / savingRatio;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -58,12 +83,12 @@ const Vault = () => {
     const exportData = entries.map((entry) => ({
       data: formatDate(entry.timestamp),
       recebido: formatCurrency(entry.amount),
-      guardado: formatCurrency(entry.amount / 3),
+      guardado: formatCurrency(entry.amount / savingRatio),
     }));
 
     const csvContent =
       "data:text/csv;charset=utf-8," +
-      "Data,Recebido,Guardado (1/3)\n" +
+      `Data,Recebido,Guardado (1/${savingRatio})\n` +
       exportData
         .map((row) => `${row.data},${row.recebido},${row.guardado}`)
         .join("\n");
@@ -90,6 +115,10 @@ const Vault = () => {
       description: "Todos os dados foram removidos.",
     });
   };
+
+  const canViewFullHistory = features.canViewFullHistory;
+  const visibleEntries = canViewFullHistory ? entries : entries.slice(0, 3);
+  const hasMoreEntries = entries.length > 3;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-charcoal p-4 md:p-8 relative">
@@ -126,7 +155,7 @@ const Vault = () => {
             </div>
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                Total Guardado (1/3)
+                Total Guardado (1/{savingRatio})
               </p>
               <p className="text-4xl md:text-5xl font-bold text-gold">
                 {formatCurrency(totalSaved)}
@@ -187,11 +216,19 @@ const Vault = () => {
         {/* History */}
         {entries.length > 0 ? (
           <Card className="bg-card border-border p-6">
-            <h2 className="font-display text-xl text-foreground mb-4">
-              Histórico Completo
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl text-foreground">
+                {canViewFullHistory ? "Histórico Completo" : "Histórico Recente"}
+              </h2>
+              {!canViewFullHistory && hasMoreEntries && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Crown className="w-3 h-3" />
+                  PRO
+                </span>
+              )}
+            </div>
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {entries.map((entry) => (
+              {visibleEntries.map((entry) => (
                 <div
                   key={entry.id}
                   className="p-4 rounded-lg bg-secondary/50 border border-border transition-smooth hover:bg-secondary space-y-2"
@@ -201,16 +238,41 @@ const Vault = () => {
                       {formatDate(entry.timestamp)}
                     </span>
                     <span className="text-sm font-semibold text-gold">
-                      +{formatCurrency(entry.amount / 3)}
+                      +{formatCurrency(entry.amount / savingRatio)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Recebido: {formatCurrency(entry.amount)}</span>
-                    <span>Guardado: 1/3</span>
+                    <span>Guardado: 1/{savingRatio}</span>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Locked entries indicator */}
+            {!canViewFullHistory && hasMoreEntries && (
+              <div 
+                className="mt-4 p-4 rounded-lg bg-secondary/30 border border-border cursor-pointer hover:bg-secondary/50 transition-smooth"
+                onClick={() => setShowPaywall(true)}
+              >
+                <div className="flex flex-col items-center justify-center space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      +{entries.length - 3} entradas ocultas
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-gold/30 text-gold hover:bg-gold/10"
+                  >
+                    <Crown className="w-3 h-3 mr-1" />
+                    Ver histórico completo
+                  </Button>
+                </div>
+              </div>
+            )}
           </Card>
         ) : (
           <Card className="bg-card border-border p-12">
@@ -235,6 +297,12 @@ const Vault = () => {
           </Card>
         )}
       </div>
+
+      <PaywallDialog 
+        open={showPaywall} 
+        onOpenChange={setShowPaywall}
+        trigger="history"
+      />
     </main>
   );
 };
