@@ -270,37 +270,21 @@ export type Database = {
       }
     }
     Views: {
-      base_projecao: {
-        Row: {
-          goal_id: string | null
-          goal_name: string | null
-          meses_estimados: number | null
-          meta_valor: number | null
-          ocorrencias: number | null
-          user_id: string | null
-          valor_atual: number | null
-          valor_recorrente: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "goals_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      valores_recorrentes: {
-        Row: {
-          ocorrencias: number | null
-          user_id: string | null
-          valor: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_base_projecao: {
+        Args: { p_user_id: string }
+        Returns: {
+          goal_id: string
+          goal_name: string
+          meses_estimados: number
+          meta_valor: number
+          ocorrencias: number
+          valor_atual: number
+          valor_recorrente: number
+        }[]
+      }
       get_plan_features: {
         Args: { p_user_id: string }
         Returns: {
@@ -309,6 +293,13 @@ export type Database = {
           can_use_goals: boolean
           can_use_limited_ai: boolean
           can_use_realtime_ai: boolean
+        }[]
+      }
+      get_valores_recorrentes: {
+        Args: { p_user_id: string }
+        Returns: {
+          ocorrencias: number
+          valor: number
         }[]
       }
       is_user_pro: { Args: { p_user_id: string }; Returns: boolean }
