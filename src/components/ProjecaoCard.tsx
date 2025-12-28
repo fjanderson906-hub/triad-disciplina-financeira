@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { usePlan } from "@/hooks/usePlan";
+import { PaywallDialog } from "@/components/PaywallDialog";
 
 interface Entry {
   id: string;
@@ -21,8 +23,10 @@ interface ProjecaoCardProps {
 
 export const ProjecaoCard = ({ entries, savingRatio }: ProjecaoCardProps) => {
   const navigate = useNavigate();
+  const { features, isLoading } = usePlan();
   const [goal, setGoal] = useState<Goal | null>(null);
   const [estimatedTime, setEstimatedTime] = useState<string | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     // Load goal from localStorage
@@ -101,32 +105,60 @@ export const ProjecaoCard = ({ entries, savingRatio }: ProjecaoCardProps) => {
 
   const hasGoal = goal && goal.targetAmount > 0;
   const hasEnoughData = entries.length >= 3;
+  const canViewProjection = features.canViewProjection;
+
+  const handleClick = () => {
+    if (!canViewProjection && hasGoal && hasEnoughData && estimatedTime) {
+      // Show paywall when user tries to view projection
+      setShowPaywall(true);
+    } else {
+      navigate("/meta");
+    }
+  };
+
+  // For free users, show locked state when there's data to show
+  const isLocked = !canViewProjection && hasGoal && hasEnoughData && estimatedTime;
 
   return (
-    <Card 
-      className="bg-card border-border p-6 transition-smooth hover:shadow-gold cursor-pointer group"
-      onClick={() => navigate("/meta")}
-    >
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground group-hover:text-gold transition-colors">
-            Projeção
-          </p>
-          {estimatedTime ? (
-            <p className="text-2xl font-semibold text-foreground group-hover:text-gold transition-colors">
-              {estimatedTime}
+    <>
+      <Card 
+        className="bg-card border-border p-6 transition-smooth hover:shadow-gold cursor-pointer group"
+        onClick={handleClick}
+      >
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground group-hover:text-gold transition-colors">
+              Projeção
             </p>
-          ) : (
-            <p className="text-lg text-muted-foreground">
-              {!hasGoal ? "Sem meta" : !hasEnoughData ? "Dados insuficientes" : "—"}
-            </p>
-          )}
+            {isLocked ? (
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+                <p className="text-lg text-muted-foreground">
+                  PRO
+                </p>
+              </div>
+            ) : estimatedTime ? (
+              <p className="text-2xl font-semibold text-foreground group-hover:text-gold transition-colors">
+                {estimatedTime}
+              </p>
+            ) : (
+              <p className="text-lg text-muted-foreground">
+                {!hasGoal ? "Sem meta" : !hasEnoughData ? "Dados insuficientes" : "—"}
+              </p>
+            )}
+          </div>
+          <TrendingUp className="w-5 h-5 text-muted-foreground group-hover:text-gold transition-colors" />
         </div>
-        <TrendingUp className="w-5 h-5 text-muted-foreground group-hover:text-gold transition-colors" />
-      </div>
-      <p className="text-xs text-muted-foreground mt-3">
-        {hasGoal && goal?.name ? goal.name : "Tempo até o alvo"}
-      </p>
-    </Card>
+        <p className="text-xs text-muted-foreground mt-3">
+          {isLocked ? "Desbloqueie para ver" : hasGoal && goal?.name ? goal.name : "Tempo até o alvo"}
+        </p>
+      </Card>
+
+      <PaywallDialog 
+        open={showPaywall} 
+        onOpenChange={setShowPaywall}
+        trigger="projection"
+      />
+    </>
   );
 };
