@@ -1,4 +1,5 @@
-import { Crown, Check } from "lucide-react";
+import { useState } from "react";
+import { Crown, Check, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,11 +8,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PRICES, PlanInterval } from "@/lib/stripe-config";
+import { toast } from "sonner";
 
 interface PaywallDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger?: "projection" | "pattern" | "multiple_goals" | "history" | "ritmo";
+  trigger?: "projection" | "pattern" | "multiple_goals" | "history" | "ritmo" | "decision";
 }
 
 const FEATURE_LIST = [
@@ -28,11 +32,46 @@ export const PaywallDialog = ({
   onOpenChange,
   trigger 
 }: PaywallDialogProps) => {
-  const handleUpgrade = () => {
-    // TODO: Integrate with Stripe for payment
-    // For now, just close the dialog
-    console.log("Upgrade clicked - trigger:", trigger);
-    onOpenChange(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanInterval>("anual");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleUpgrade = async () => {
+    setIsLoading(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Faça login para continuar");
+        setIsLoading(false);
+        return;
+      }
+
+      const priceId = STRIPE_PRICES[selectedPlan].priceId;
+
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { priceId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error("Checkout error:", error);
+        toast.error("Erro ao iniciar pagamento");
+        setIsLoading(false);
+        return;
+      }
+
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error) {
+      console.error("Error creating checkout:", error);
+      toast.error("Erro ao processar pagamento");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -70,19 +109,33 @@ export const PaywallDialog = ({
           {/* Pricing */}
           <div className="border-t border-border pt-6 space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-secondary/50 rounded-lg p-4 text-center space-y-1 border border-border">
+              <button
+                onClick={() => setSelectedPlan("mensal")}
+                className={`rounded-lg p-4 text-center space-y-1 border transition-all ${
+                  selectedPlan === "mensal"
+                    ? "bg-secondary border-gold/50"
+                    : "bg-secondary/50 border-border hover:border-border/80"
+                }`}
+              >
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Mensal</p>
                 <p className="text-xl font-bold text-foreground">R$ 29</p>
                 <p className="text-xs text-muted-foreground">/mês</p>
-              </div>
-              <div className="bg-gold/5 rounded-lg p-4 text-center space-y-1 border border-gold/30 relative">
+              </button>
+              <button
+                onClick={() => setSelectedPlan("anual")}
+                className={`rounded-lg p-4 text-center space-y-1 border relative transition-all ${
+                  selectedPlan === "anual"
+                    ? "bg-gold/10 border-gold/50"
+                    : "bg-gold/5 border-gold/30 hover:border-gold/40"
+                }`}
+              >
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gold text-primary-foreground text-xs px-2 py-0.5 rounded-full">
                   Economia
                 </div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Anual</p>
                 <p className="text-xl font-bold text-gold">R$ 197</p>
                 <p className="text-xs text-muted-foreground">/ano</p>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -90,9 +143,14 @@ export const PaywallDialog = ({
           <div className="space-y-3">
             <Button 
               onClick={handleUpgrade}
+              disabled={isLoading}
               className="w-full bg-gold text-primary-foreground hover:bg-gold/90 transition-smooth h-12"
             >
-              <Crown className="w-4 h-4 mr-2" />
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Crown className="w-4 h-4 mr-2" />
+              )}
               Assinar TRIAD PRO
             </Button>
             <Button 

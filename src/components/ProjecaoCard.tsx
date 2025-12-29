@@ -4,7 +4,7 @@ import { TrendingUp, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { usePlan } from "@/hooks/usePlan";
 import { PaywallDialog } from "@/components/PaywallDialog";
-
+import { ProPhrase } from "@/components/ProPhrase";
 interface Entry {
   id: string;
   amount: number;
@@ -149,9 +149,13 @@ export const ProjecaoCard = ({ entries, savingRatio }: ProjecaoCardProps) => {
           </div>
           <TrendingUp className="w-5 h-5 text-muted-foreground group-hover:text-gold transition-colors" />
         </div>
-        <p className="text-xs text-muted-foreground mt-3">
-          {isLocked ? "Desbloqueie para ver" : hasGoal && goal?.name ? goal.name : "Tempo até o alvo"}
-        </p>
+        {canViewProjection && estimatedTime && !isLocked ? (
+          <ProPhrase category="projecao" className="mt-3" />
+        ) : (
+          <p className="text-xs text-muted-foreground mt-3">
+            {isLocked ? "Desbloqueie para ver" : hasGoal && goal?.name ? goal.name : "Tempo até o alvo"}
+          </p>
+        )}
       </Card>
 
       <PaywallDialog 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, RotateCcw, Wallet, Lock, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ import { SubliminalMessage } from "@/components/SubliminalMessage";
 import { RitmoCard } from "@/components/RitmoCard";
 import { ProjecaoCard } from "@/components/ProjecaoCard";
 import { DecisaoDialog } from "@/components/DecisaoDialog";
-
+import { useSubscription } from "@/hooks/useSubscription";
 interface Entry {
   id: string;
   amount: number;
@@ -32,12 +32,33 @@ interface Entry {
 
 const Index = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [showSplash, setShowSplash] = useState(true);
   const [savingRatio, setSavingRatio] = useState<number>(3);
   const [userId, setUserId] = useState<string | null>(null);
   const [showDecisaoDialog, setShowDecisaoDialog] = useState(false);
+  const { refreshSubscription } = useSubscription();
+  // Handle payment redirect
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    if (paymentStatus === "success") {
+      toast({
+        title: "Pagamento confirmado",
+        description: "Bem-vindo ao TRIAD PRO. Acesso completo liberado.",
+      });
+      refreshSubscription();
+      setSearchParams({});
+    } else if (paymentStatus === "canceled") {
+      toast({
+        title: "Pagamento cancelado",
+        description: "O processo foi interrompido.",
+        variant: "destructive",
+      });
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, refreshSubscription]);
 
   // Load user profile and entries from localStorage on mount
   useEffect(() => {
