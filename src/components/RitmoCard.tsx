@@ -3,7 +3,7 @@ import { Clock, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { usePlan } from "@/hooks/usePlan";
 import { PaywallDialog } from "@/components/PaywallDialog";
-
+import { ProPhrase } from "@/components/ProPhrase";
 interface Entry {
   id: string;
   amount: number;
@@ -105,9 +105,13 @@ export const RitmoCard = ({ entries, savingRatio }: RitmoCardProps) => {
           </div>
           <Clock className={`w-5 h-5 ${isLocked ? 'text-muted-foreground' : 'text-gold'}`} />
         </div>
-        <p className="text-xs text-muted-foreground mt-3">
-          {isLocked ? "Desbloqueie para ver" : "Constância ativa"}
-        </p>
+        {canViewRitmo && !isLocked ? (
+          <ProPhrase category="ritmo" className="mt-3" />
+        ) : (
+          <p className="text-xs text-muted-foreground mt-3">
+            {isLocked ? "Desbloqueie para ver" : "Constância ativa"}
+          </p>
+        )}
       </Card>
 
       <PaywallDialog 
